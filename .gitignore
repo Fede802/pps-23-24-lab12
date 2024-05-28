@@ -9,3 +9,7 @@ project/target
 target
 build
 .gradle
+.bloop
+.bsp
+gradle
+project
