@@ -8,7 +8,7 @@ map([], _, []) .
 map([H|T], M, [H2|T2]) :-
 	map(T, M, T2), copy_term(M, mapper(H, H2, OP)), call(OP).
 
-map2(L, M, R) :- M =.. [mapper, Arg1, Arg2, Arg3], fold_right(L, _, fold_function([Arg2|Acc], Arg1, Arg2, Arg3), R).	%???
+map2(L, M, R) :- M =.. [mapper, IN, OUT, OP], fold_right(L, [], fold_function(Acc, IN, OPR, (call(OP), OPR = [OUT|Acc])), R).
 
 %filter(+L, +filter_function, -Lo)
 %Examples:
@@ -17,13 +17,20 @@ filter([], _, []).
 filter([H|T], F, [H|T2]) :- filter(T, F, T2), copy_term(F, filter_function(H, OP)), call(OP),!.
 filter([H|T], F, T2) :- filter(T, F, T2).
 
+predicate_handler(Predicate, TrueOP, FalseOP) :- call(Predicate), call(TrueOP), !.
+predicate_handler(Predicate, TrueOP, FalseOP) :- call(FalseOP).
+
+predicate_handler2(Predicate, TrueOP, FalseOP) :- call(Predicate), call(TrueOP), !; call(FalseOP).
+
+filter2(L, F, L2) :- F =.. [filter_function, IN, Predicate], fold_right(L, [], fold_function(Acc, IN, PR, predicate_handler2(Predicate, PR = [IN|Acc], PR = Acc)), L2).
+
 %reduce(+L, +reduce_function, -R)
 %Examples:
 %reduce([10,20,30], reduce_function(Acc, El, R, R is Acc + El), R). -> yes, R/60
 reduce([E], _, E).
 reduce([H|T], RF, R) :- reduce(T, RF, PR), copy_term(RF, reduce_function(PR, H, R, OP)), call(OP).
 
-reduce2([H|T], RF, R) :- RF =.. [reduce_function, Arg1, Arg2, Arg3, Arg4], fold_left(T, H, fold_function(Arg1, Arg2, Arg3, Arg4), R).
+reduce2([H|T], RF, R) :- RF =.. [reduce_function, Acc, IN, OPR, OP], fold_left(T, H, fold_function(Acc, IN, OPR, OP), R).
 
 %fold_left(+L, +Acc, +fold_function(), -R)
 %Examples:
@@ -36,3 +43,7 @@ fold_left([H|T], Acc, FF, R) :- copy_term(FF, fold_function(Acc, H, IR, OP)), ca
 %fold_right([10,20,30], 0, fold_function(Acc, El, R, R is Acc + El), R). -> yes, R/60
 fold_right([], Acc, _, Acc).
 fold_right([H|T], Acc, FF, R) :- fold_right(T, Acc, FF, IR), copy_term(FF, fold_function(IR, H, R, OP)), call(OP). 
+
+
+
+
